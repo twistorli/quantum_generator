@@ -640,15 +640,31 @@ function fetchVideoFrame(streamName) {
 
 
   if (typeof liveTransmissions === 'undefined' || !liveTransmissions.length) {
-    // Need to fetch the data
+    // Need to fetch the data. Replit's meditationvideos.replit.app account is gone,
+    // so this now resolves relative to wherever generator.js itself was loaded from
+    // (jsDelivr/GitHub Pages/etc), no external service or hardcoded account required.
     var liveTransmissionsVar = [];
-    
-    $.getJSON('https://meditationvideos.replit.app/api/embed-videos')
+
+    var __generatorScriptEl = document.currentScript;
+    if (!__generatorScriptEl) {
+      var __scripts = document.getElementsByTagName('script');
+      for (var __i = __scripts.length - 1; __i >= 0; __i--) {
+        if (__scripts[__i].src && __scripts[__i].src.indexOf('generator.js') !== -1) {
+          __generatorScriptEl = __scripts[__i];
+          break;
+        }
+      }
+    }
+    var __generatorBase = __generatorScriptEl
+      ? __generatorScriptEl.src.replace(/generator\.js(\?.*)?$/, '')
+      : '';
+
+    $.getJSON(__generatorBase + 'data/embed-videos.json')
       .done(function(data) {
         liveTransmissionsVar = data;
-        
+
         console.log('Data loaded successfully:', liveTransmissionsVar);
-        
+
         // Call your functions that need the data
         setLiveContent(liveTransmissionsVar);
       })
