@@ -7,6 +7,7 @@ jQuery(document).ready(function ($) {
   let fetcheddata_dec = [];
   let fetcheddata_hex = [];
   let isfetched = 0;
+  let printIndex = 0;
   let sessionObj = {}
   let isVideoPlaying = false;
   let qrngSelected = "omega";
@@ -47,15 +48,16 @@ jQuery(document).ready(function ($) {
   setFetchIntervalAndLength(currentDisplayInterval)
 
   function getOneHex() {
-    switch (qrngSelected) {
+    const source = qrngSelected;
+    switch (source) {
       case "esculap":
         jQuery.get(`https://qrng.anu.edu.au/API/jsonI.php?length=60&type=hex16&size=1`, data => {
-          useRandomHexArrayData(data.data)
+          useRandomHexArrayData(data.data, source)
         });
         break;
       case "omega":
         jQuery.get(`https://beacon.nist.gov/beacon/2.0/pulse/last`, data => {
-          useRandomHexArrayData(data.pulse.outputValue.match(/.{1,2}/g))
+          useRandomHexArrayData(data.pulse.outputValue.match(/.{1,2}/g), source)
         });
         break;
 
@@ -64,8 +66,9 @@ jQuery(document).ready(function ($) {
     }
   };
 
-  function useRandomHexArrayData(resultHex) {
+  function useRandomHexArrayData(resultHex, source) {
     if (resultHex === 'undefined') return;
+    if (source !== qrngSelected) return; // response from a source that was switched away from while in flight
     var resultDec = resultHex.map(function (x) {
       return parseInt(x, 16);
     });
@@ -120,6 +123,7 @@ jQuery(document).ready(function ($) {
       let dataMonopole = $('#dataMonopole');
 
       index = (index + 1);
+      printIndex = index;
 
       var colorDiv = $(`.colorValue[param=1]`);
       var qrngColorValue = fetcheddata_dec[index];
@@ -1839,8 +1843,16 @@ function fetchVideoFrame(streamName) {
   $(`<option value="omega">Omega</option>`).appendTo($qrngSelect);
   $(`<option value="esculap">Esculap</option>`).appendTo($qrngSelect);
 
-  $(document).on('change', '.qrngSelect', function () {
-    qrngSelected = $(this).val();
+  var $qrngConfirm = $(`<button class="qrngConfirm" type="button">Confirm</button>`).appendTo($qrngContent);
+
+  $(document).on('click', '.qrngConfirm', function () {
+    var newSource = $qrngSelect.val();
+    if (newSource === qrngSelected) return;
+    qrngSelected = newSource;
+    // drop unread numbers from the old source so the new one shows next
+    fetcheddata_dec = fetcheddata_dec.slice(0, printIndex + 1);
+    fetcheddata_hex = fetcheddata_hex.slice(0, printIndex + 1);
+    getOneHex();
   });
 
   var $qrngIntervalCheckbox = $(`<input class="qrngIntervalCheckbox" type="checkbox" />`);
